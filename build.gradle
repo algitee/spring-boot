@@ -25,6 +25,8 @@ allprojects {
 	group "org.springframework.boot"
 
 	repositories {
+		// 增加阿里云 maven 源, 不然拉取依赖太慢了
+		maven { url "https://maven.aliyun.com/nexus/content/groups/public/"}
 		mavenCentral()
 		if (version.contains('-')) {
 			maven { url "https://repo.spring.io/milestone" }
