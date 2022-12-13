@@ -50,11 +50,15 @@ public abstract class Launcher {
 	 */
 	protected void launch(String[] args) throws Exception {
 		if (!isExploded()) {
+			// 注册 URL 协议的处理器
 			JarFile.registerUrlProtocolHandler();
 		}
+		// 创建类加载器
 		ClassLoader classLoader = createClassLoader(getClassPathArchivesIterator());
 		String jarMode = System.getProperty("jarmode");
+		// 获取启动类的主方法
 		String launchClass = (jarMode != null && !jarMode.isEmpty()) ? JAR_MODE_LAUNCHER : getMainClass();
+		// 执行启动类的main方法
 		launch(args, launchClass, classLoader);
 	}
 
@@ -91,6 +95,7 @@ public abstract class Launcher {
 	 * @throws Exception if the launch fails
 	 */
 	protected void launch(String[] args, String launchClass, ClassLoader classLoader) throws Exception {
+		// 为当前线程设置类加载器，这个类加载器在启动应用时，默认的类加载器
 		Thread.currentThread().setContextClassLoader(classLoader);
 		createMainMethodRunner(launchClass, args, classLoader).run();
 	}

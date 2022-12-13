@@ -95,6 +95,7 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 
 	/**
 	 * Create a new {@link JarFile} backed by the specified file.
+	 *
 	 * @param file the root jar file
 	 * @throws IOException if the file cannot be read
 	 */
@@ -104,6 +105,7 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 
 	/**
 	 * Create a new {@link JarFile} backed by the specified file.
+	 *
 	 * @param file the root jar file
 	 * @throws IOException if the file cannot be read
 	 */
@@ -114,10 +116,11 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 	/**
 	 * Private constructor used to create a new {@link JarFile} either directly or from a
 	 * nested entry.
-	 * @param rootFile the root jar file
+	 *
+	 * @param rootFile     the root jar file
 	 * @param pathFromRoot the name of this file
-	 * @param data the underlying data
-	 * @param type the type of the jar file
+	 * @param data         the underlying data
+	 * @param type         the type of the jar file
 	 * @throws IOException if the file cannot be read
 	 */
 	private JarFile(RandomAccessDataFile rootFile, String pathFromRoot, RandomAccessData data, JarFileType type)
@@ -126,7 +129,7 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 	}
 
 	private JarFile(RandomAccessDataFile rootFile, String pathFromRoot, RandomAccessData data, JarEntryFilter filter,
-			JarFileType type, Supplier<Manifest> manifestSupplier) throws IOException {
+					JarFileType type, Supplier<Manifest> manifestSupplier) throws IOException {
 		super(rootFile.getFile());
 		super.close();
 		this.rootFile = rootFile;
@@ -137,13 +140,11 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 		parser.addVisitor(centralDirectoryVisitor());
 		try {
 			this.data = parser.parse(data, filter == null);
-		}
-		catch (RuntimeException ex) {
+		} catch (RuntimeException ex) {
 			try {
 				this.rootFile.close();
 				super.close();
-			}
-			catch (IOException ioex) {
+			} catch (IOException ioex) {
 			}
 			throw ex;
 		}
@@ -153,8 +154,7 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 					return null;
 				}
 				return new Manifest(inputStream);
-			}
-			catch (IOException ex) {
+			} catch (IOException ex) {
 				throw new RuntimeException(ex);
 			}
 		};
@@ -211,8 +211,7 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 		if (manifest == null) {
 			try {
 				manifest = this.manifestSupplier.get();
-			}
-			catch (RuntimeException ex) {
+			} catch (RuntimeException ex) {
 				throw new IOException(ex);
 			}
 			this.manifest = new SoftReference<>(manifest);
@@ -234,11 +233,12 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 
 	/**
 	 * Return an iterator for the contained entries.
-	 * @since 2.3.0
+	 *
 	 * @see java.lang.Iterable#iterator()
+	 * @since 2.3.0
 	 */
 	@Override
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	public Iterator<java.util.jar.JarEntry> iterator() {
 		return (Iterator) this.entries.iterator(this::ensureOpen);
 	}
@@ -282,6 +282,7 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 
 	/**
 	 * Return a nested {@link JarFile} loaded from the specified entry.
+	 *
 	 * @param entry the zip entry
 	 * @return a {@link JarFile} for the entry
 	 * @throws IOException if the nested jar file cannot be read
@@ -292,6 +293,7 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 
 	/**
 	 * Return a nested {@link JarFile} loaded from the specified entry.
+	 *
 	 * @param entry the zip entry
 	 * @return a {@link JarFile} for the entry
 	 * @throws IOException if the nested jar file cannot be read
@@ -299,8 +301,7 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 	public synchronized JarFile getNestedJarFile(JarEntry entry) throws IOException {
 		try {
 			return createJarFileFromEntry(entry);
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			throw new IOException("Unable to open nested jar file '" + entry.getName() + "'", ex);
 		}
 	}
@@ -404,8 +405,7 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 	JarEntryCertification getCertification(JarEntry entry) {
 		try {
 			return this.entries.getCertification(entry);
-		}
-		catch (IOException ex) {
+		} catch (IOException ex) {
 			throw new IllegalStateException(ex);
 		}
 	}
@@ -429,7 +429,9 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 	 */
 	public static void registerUrlProtocolHandler() {
 		Handler.captureJarContextUrl();
+		// 获取URLStreamHandler 的路径
 		String handlers = System.getProperty(PROTOCOL_HANDLER, "");
+		// 将Spring boot 自定义的 HANDLERS_PACKAGE(org.springframework.boot.loader)补充上去
 		System.setProperty(PROTOCOL_HANDLER,
 				((handlers == null || handlers.isEmpty()) ? HANDLERS_PACKAGE : handlers + "|" + HANDLERS_PACKAGE));
 		resetCachedUrlHandlers();
@@ -439,12 +441,14 @@ public class JarFile extends AbstractJarFile implements Iterable<java.util.jar.J
 	 * Reset any cached handlers just in case a jar protocol has already been used. We
 	 * reset the handler by trying to set a null {@link URLStreamHandlerFactory} which
 	 * should have no effect other than clearing the handlers cache.
+	 * <p>
+	 * 重置 URL 中的 URLStreamHandler 的缓存，防止 `jar://` 协议对应的 URLStreamHandler 已经创建
+	 * 我们通过设置 URLStreamHandlerFactory 为 null 的方式，清空 URL 中的该缓存。
 	 */
 	private static void resetCachedUrlHandlers() {
 		try {
 			URL.setURLStreamHandlerFactory(null);
-		}
-		catch (Error ex) {
+		} catch (Error ex) {
 			// Ignore
 		}
 	}
