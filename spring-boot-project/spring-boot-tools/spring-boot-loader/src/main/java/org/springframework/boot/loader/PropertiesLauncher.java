@@ -338,6 +338,7 @@ public class PropertiesLauncher extends Launcher {
 
 	@Override
 	protected String getMainClass() throws Exception {
+		// 获取 @SpringbootApplication 注解启动类的全名(自定义设置的主启动类)
 		String mainClass = getProperty(MAIN, "Start-Class");
 		if (mainClass == null) {
 			throw new IllegalStateException("No '" + MAIN + "' or 'Start-Class' specified");
@@ -450,9 +451,16 @@ public class PropertiesLauncher extends Launcher {
 				: defaultValue;
 	}
 
+	/**
+	 * 获取所有的archive
+	 *
+	 * @return archives
+	 * @throws Exception 创建ClassPathArchives异常
+	 */
 	@Override
 	protected Iterator<Archive> getClassPathArchivesIterator() throws Exception {
 		ClassPathArchives classPathArchives = this.classPathArchives;
+		// 不存在就创建
 		if (classPathArchives == null) {
 			classPathArchives = new ClassPathArchives();
 			this.classPathArchives = classPathArchives;

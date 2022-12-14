@@ -97,6 +97,7 @@ public abstract class Launcher {
 	protected void launch(String[] args, String launchClass, ClassLoader classLoader) throws Exception {
 		// 为当前线程设置类加载器，这个类加载器在启动应用时，默认的类加载器
 		Thread.currentThread().setContextClassLoader(classLoader);
+		//  创建MainMethodRunner对象，执行run()方法，启动springboot应用
 		createMainMethodRunner(launchClass, args, classLoader).run();
 	}
 
@@ -127,6 +128,7 @@ public abstract class Launcher {
 	protected abstract Iterator<Archive> getClassPathArchivesIterator() throws Exception;
 
 	protected final Archive createArchive() throws Exception {
+		// 获取jar所在的绝对路径
 		ProtectionDomain protectionDomain = getClass().getProtectionDomain();
 		CodeSource codeSource = protectionDomain.getCodeSource();
 		URI location = (codeSource != null) ? codeSource.getLocation().toURI() : null;
@@ -138,6 +140,7 @@ public abstract class Launcher {
 		if (!root.exists()) {
 			throw new IllegalStateException("Unable to determine code source archive from " + root);
 		}
+		// ExplodedArchive 找 MANIFEST.MF 文件存放路径, 是目录则使用 ExplodedArchive ，反之使用 JarFileArchive
 		return (root.isDirectory() ? new ExplodedArchive(root) : new JarFileArchive(root));
 	}
 

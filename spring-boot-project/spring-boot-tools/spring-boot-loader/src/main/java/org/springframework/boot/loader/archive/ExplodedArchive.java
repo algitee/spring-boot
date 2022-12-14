@@ -74,6 +74,7 @@ public class ExplodedArchive implements Archive {
 		}
 		this.root = root;
 		this.recursive = recursive;
+		// 找到 META-INF 文件绝对路径
 		this.manifestFile = getManifestFile(root);
 	}
 

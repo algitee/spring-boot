@@ -44,6 +44,7 @@ public class MainMethodRunner {
 
 	public void run() throws Exception {
 		Class<?> mainClass = Class.forName(this.mainClassName, false, Thread.currentThread().getContextClassLoader());
+		// 反射调用 main 方法
 		Method mainMethod = mainClass.getDeclaredMethod("main", String[].class);
 		mainMethod.setAccessible(true);
 		mainMethod.invoke(null, new Object[] { this.args });

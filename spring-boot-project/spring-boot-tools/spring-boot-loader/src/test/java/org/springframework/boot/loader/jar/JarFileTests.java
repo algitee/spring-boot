@@ -24,12 +24,15 @@ import java.io.FileOutputStream;
 import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
+import java.security.CodeSigner;
+import java.security.cert.Certificate;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,10 +40,8 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.jar.*;
 import java.util.jar.JarEntry;
-import java.util.jar.JarInputStream;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
 import java.util.stream.Stream;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -126,6 +127,28 @@ class JarFileTests {
 		assertThat(urlClassLoader.getResource("d/9.dat")).isNotNull();
 		urlClassLoader.close();
 		jarFile.close();
+	}
+
+	@Test
+	void jdkJarFiles() throws Exception {
+		java.util.jar.JarFile jarFile = new java.util.jar.JarFile(new File("E:\\tian\\jar\\jar\\wtgz-user-0.0.79-SNAPSHOT.jar"));
+		String name = jarFile.getName();
+		System.out.println(name);
+		Enumeration<java.util.jar.JarEntry> entries = jarFile.entries();
+		while (entries.hasMoreElements()) {
+			JarEntry jarEntry = entries.nextElement();
+			name = jarEntry.getName();
+			System.out.println(name);
+		}
+		String[] args = {"java", "-jar", "E:\\tian\\jar\\jar\\wtgz-user-0.0.79-SNAPSHOT.jar"};
+		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+		Class<?> mainClass = Class.forName("org.springframework.boot.loader.JarLauncher", false, classLoader);
+		// 反射调用 main 方法
+		Method mainMethod = mainClass.getDeclaredMethod("main", String[].class);
+		mainMethod.setAccessible(true);
+		// 使用这个debug时，获取类的全路径是当前路径的，不是指定jar包的类路径
+		mainMethod.invoke(null, new Object[] { args });
+
 	}
 
 	@Test
