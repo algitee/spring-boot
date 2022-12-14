@@ -186,6 +186,9 @@ public class SpringApplication {
 
 	private static final ThreadLocal<SpringApplicationHook> applicationHook = new ThreadLocal<>();
 
+	/**
+	 * 主要的 java config类的数组
+	 */
 	private Set<Class<?>> primarySources;
 
 	private Set<String> sources = new LinkedHashSet<>();
@@ -202,20 +205,31 @@ public class SpringApplication {
 
 	private Banner banner;
 
+	/**
+	 * 资源类加载器
+	 */
 	private ResourceLoader resourceLoader;
 
 	private BeanNameGenerator beanNameGenerator;
 
 	private ConfigurableEnvironment environment;
 
+	/**
+	 * web应用类型
+	 */
 	private WebApplicationType webApplicationType;
 
 	private boolean headless = true;
 
 	private boolean registerShutdownHook = true;
 
+	/**
+	 * ApplicationContextInitializer 数组
+	 */
 	private List<ApplicationContextInitializer<?>> initializers;
-
+	/**
+	 * ApplicationListener 数组
+	 */
 	private List<ApplicationListener<?>> listeners;
 
 	private Map<String, Object> defaultProperties;
@@ -271,12 +285,20 @@ public class SpringApplication {
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
 		this.bootstrapRegistryInitializers = new ArrayList<>(
 				getSpringFactoriesInstances(BootstrapRegistryInitializer.class));
+		// 初始化 initializer 属性
 		setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
+		// 初始化 listeners 属性
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+		// 获取启动类的class文件
 		this.mainApplicationClass = deduceMainApplicationClass();
 	}
 
 	private Class<?> deduceMainApplicationClass() {
+		/**
+			拷贝一份主线程栈的引用, {@link java.lang.Throwable#getStackTrace()}
+			RuntimeException runtimeException = new RuntimeException();
+			StackTraceElement[] stackTrace = runtimeException.getStackTrace();
+		 */
 		return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).walk(this::findMainClass)
 				.orElse(null);
 	}
@@ -293,26 +315,41 @@ public class SpringApplication {
 	 * @return a running {@link ApplicationContext}
 	 */
 	public ConfigurableApplicationContext run(String... args) {
+		// 获取当前时间纳秒值,用于计算run()方法启动过程的时长
 		long startTime = System.nanoTime();
+		//
 		DefaultBootstrapContext bootstrapContext = createBootstrapContext();
 		ConfigurableApplicationContext context = null;
+		// 配置 headless 属性
 		configureHeadlessProperty();
+		// 获取 SpringApplicationRunListeners 的数组，并启动监听
 		SpringApplicationRunListeners listeners = getRunListeners(args);
+		// 启动，并以事件的形式通知
 		listeners.starting(bootstrapContext, this.mainApplicationClass);
 		try {
+			// 创建 ApplicationArguments 对象
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+			// 加载属性配置，执行完成后，所有的 environment的属性都会加载进来,包括 application.properties
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
+			// 打印 spring banner
 			Banner printedBanner = printBanner(environment);
+			// 创建应用的上下文
 			context = createApplicationContext();
 			context.setApplicationStartup(this.applicationStartup);
+			// 调用所有初始化的 initialize 方法
 			prepareContext(bootstrapContext, context, environment, listeners, applicationArguments, printedBanner);
+			// 初始化 spring 容器
 			refreshContext(context);
+			// 执行 spring 容器的初始化的后置逻辑，默认实现为空
 			afterRefresh(context, applicationArguments);
 			Duration timeTakenToStartup = Duration.ofNanos(System.nanoTime() - startTime);
+			// 打印 springboot 启动的时长日志
 			if (this.logStartupInfo) {
 				new StartupInfoLogger(this.mainApplicationClass).logStarted(getApplicationLog(), timeTakenToStartup);
 			}
+			// 通知 SpringApplicationRunListener， spring容器启动完成
 			listeners.started(context, timeTakenToStartup);
+			// 调用 ApplicationRunner 或者 CommandLineRunner 运行方法
 			callRunners(context, applicationArguments);
 		}
 		catch (Throwable ex) {
@@ -441,6 +478,7 @@ public class SpringApplication {
 	private SpringApplicationRunListeners getRunListeners(String[] args) {
 		ArgumentResolver argumentResolver = ArgumentResolver.of(SpringApplication.class, this);
 		argumentResolver = argumentResolver.and(String[].class, args);
+		// 获取 getSpringFactoriesInstances 实例对象数组
 		List<SpringApplicationRunListener> listeners = getSpringFactoriesInstances(SpringApplicationRunListener.class,
 				argumentResolver);
 		SpringApplicationHook hook = applicationHook.get();
@@ -452,12 +490,23 @@ public class SpringApplication {
 		return new SpringApplicationRunListeners(logger, listeners, this.applicationStartup);
 	}
 
+	/**
+	 * 获取指定类型的对象实例
+	 *
+	 * @param type 指定的class
+	 * @param <T>  类型
+	 * @return 返回的对象实例
+	 */
 	private <T> List<T> getSpringFactoriesInstances(Class<T> type) {
 		return getSpringFactoriesInstances(type, null);
 	}
 
 	private <T> List<T> getSpringFactoriesInstances(Class<T> type, ArgumentResolver argumentResolver) {
-		return SpringFactoriesLoader.forDefaultResourceLocation(getClassLoader()).load(type, argumentResolver);
+		return SpringFactoriesLoader
+				// 加载该文件下指定类的名的数组 META-INF/spring.factories,只会加载一次
+				.forDefaultResourceLocation(getClassLoader())
+				// 获取对象实例,并进行排序
+				.load(type, argumentResolver);
 	}
 
 	private ConfigurableEnvironment getOrCreateEnvironment() {
@@ -1300,6 +1349,7 @@ public class SpringApplication {
 	 * @return the running {@link ApplicationContext}
 	 */
 	public static ConfigurableApplicationContext run(Class<?>[] primarySources, String[] args) {
+		// 创建 SpringApplication 对象,并执行运行
 		return new SpringApplication(primarySources).run(args);
 	}
 
